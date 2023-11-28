@@ -1,0 +1,111 @@
+@startuml webserver
+' skinparam classAttributeIconSize 0
+
+class TcpServer {
+  - loop_ : EventLoop
+  - thread_pool_ : EventLoopThreadPool
+  - read_callBack : CallBack
+  - write_callBack : CallBack
+  - connection_callBack : CallBack
+  - connections : ConnectionMap
+  - acceptor_ : Acceptor
+
+  - new_connection()
+  - remove_connection()
+  - remove_connection_in_loop()
+}
+class TcpConnection {
+  - input_buffer_ : Buffer
+  - output_buffer_ : Buffer
+  - connection_callback: Callback
+  - message_callback: Callback
+  - write_complete_callback: Callback
+  - high_water_mark_callback: Callback
+  - close_callback: Callback
+  - channel_
+  - socket_
+  - localaddr_
+  - peeraddr_
+
+  - handle_read()
+  - handle_write()
+  - handle_close()
+  - handle_error()
+  - send_in_loop()
+  - close_in_loop()
+  + send()
+  + close()
+}
+class Acceptor {
+  - loop_
+  - accept_channel_
+  - new_connection_callback_
+
+  + handle_read()
+}
+class EventLoopThreadPool {
+  - baseloop_
+  - threads_
+  - loops_
+
+  + start()
+  + get_next_loop()
+  + get_all_loops()
+}
+class EventLoopThread {
+  - loop_
+
+  + start_loop()
+  + thread_func()
+}
+class EventLoop {
+  - poller_
+  - wakeup_channel_
+  - active_channels_ : ChannelList
+  - pending_functions_ : VoidFunctor
+
+  + wakeup()
+  + update_channel()
+  + remove_channel()
+  - do_pending_functions()
+  + run_in_loop()
+  + loop()
+}
+class Poller {
+  - pollfd_
+  - events_
+  - channels_
+
+  + poll()
+  + update_channel()
+  + remove_channel()
+}
+class Channel {
+  - loop_ : EventLoop*
+  - fd_
+  - events_
+  - recv_events_
+  - status_
+  - read_callback
+  - write_callback
+  - close_callback
+  - error_callback
+
+  + handle_event()
+}
+' class Socket
+
+TcpServer *-- Acceptor
+Acceptor *.. Channel
+TcpServer o-- Poller
+TcpServer o-- EventLoopThreadPool
+TcpServer o-- TcpConnection
+
+EventLoopThreadPool "1" *-- "n" EventLoopThread
+EventLoopThread o-- EventLoop
+EventLoop *-- Poller
+Poller "1" *-- "n" Channel
+TcpConnection *-- Channel
+TcpConnection <-- EventLoop
+
+@enduml
